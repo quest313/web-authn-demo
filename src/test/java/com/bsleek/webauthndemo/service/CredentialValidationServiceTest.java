@@ -1,0 +1,57 @@
+package com.bsleek.webauthndemo.service;
+
+import com.bsleek.webauthndemo.model.*;
+import org.junit.Before;
+import org.junit.Test;
+
+
+public class CredentialValidationServiceTest {
+
+
+
+    public static final String CREDENTIAL_ID = "fIDwcHpaZ3lgWT3vjng1IOhiG_5jw9vxIfUyI5nEHbSaoW2lA2MUiFmdm2z1An0x9GojfsSlSqjfcNgk0NGrIw";
+    public static final String PUBLIC_KEY_TYPE = "public-key";
+    public static final String ATTESTATION_SIGNATURE = "NDgsNjksMiwzMywwLDEzMiw2LDI0LDE3MywzOCwxNjksODEsMjYsMTA0LDE2MiwxMTEsMjM2LDE0LDIwLDEwNiwzMSwxNDQsNzUsMTEyLDExMywxNTEsMTgxLDE1LDE2NiwyMywxMjksMTcwLDIxNSwxMjcsMTg2LDIzMywyNDksMiwzMiwyNyw3NywxMjQsMTY3LDg5LDEyMSwyMTcsMTE0LDEzOSwxNTIsMTM2LDE4MywyMywxMzksMjMsMTQ1LDE4MSwyNDksODcsMTQ2LDExMywxODEsMTY2LDQxLDU1LDE3NCwyMzksMTk5LDI1LDU0LDEyOCwxMw==";
+    public static final String ATTESTATION_CERTIFICATE = "NDgsMTMwLDIsNzksNDgsMTMwLDEsNTUsMTYwLDMsMiwxLDIsMiw0LDYwLDEwNCw0MSw3Nyw0OCwxMyw2LDksNDIsMTM0LDcyLDEzNCwyNDcsMTMsMSwxLDExLDUsMCw0OCw0Niw0OSw0NCw0OCw0Miw2LDMsODUsNCwzLDE5LDM1LDg5LDExNyw5OCwxMDUsOTksMTExLDMyLDg1LDUwLDcwLDMyLDgyLDExMSwxMTEsMTE2LDMyLDY3LDY1LDMyLDgzLDEwMSwxMTQsMTA1LDk3LDEwOCwzMiw1Miw1Myw1NSw1MCw0OCw0OCw1NCw1MSw0OSw0OCwzMiwyMywxMyw0OSw1Miw0OCw1Niw0OCw0OSw0OCw0OCw0OCw0OCw0OCw0OCw5MCwyNCwxNSw1MCw0OCw1Myw0OCw0OCw1Nyw0OCw1Miw0OCw0OCw0OCw0OCw0OCw0OCw5MCw0OCw0OSw0OSw0Nyw0OCw0NSw2LDMsODUsNCwzLDEyLDM4LDg5LDExNyw5OCwxMDUsOTksMTExLDMyLDg1LDUwLDcwLDMyLDY5LDY5LDMyLDgzLDEwMSwxMTQsMTA1LDk3LDEwOCwzMiw1MCw1MSw1Nyw1MCw1Myw1NSw1MSw1Miw1Niw0OSw0OSw0OSw0OSw1NSw1Nyw0OCw0OSw0OCw4OSw0OCwxOSw2LDcsNDIsMTM0LDcyLDIwNiw2MSwyLDEsNiw4LDQyLDEzNCw3MiwyMDYsNjEsMywxLDcsMyw2NiwwLDQsMTg5LDIyMywxMDMsMTQ3LDIxOSwxMTksMTQ4LDE5NSw4MCw0OSwxMTMsMjM3LDQ0LDc3LDY5LDc0LDIxNywxMTUsMTAyLDExNywyNiw3MiwxODYsMTY1LDIxNywyNDksMTgxLDEwNiw1OCwzMiwxMjksMTIxLDEwNyw3OCwyMjMsNDMsMjA1LDEyMywxNDYsMTIyLDIwLDE0NywxNiwyNTEsMTk2LDEwNCw3MSwxMTEsMjUyLDg3LDE0NiwxNjksMTI1LDE4Miw0NywxNjAsNDAsMTA3LDE5OCwxNjMsMzIsMiwxNCw5OSwxNjMsNTksNDgsNTcsNDgsMzQsNiw5LDQzLDYsMSw0LDEsMTMwLDE5NiwxMCwyLDQsMjEsNDksNDYsNTEsNDYsNTQsNDYsNDksNDYsNTIsNDYsNDksNDYsNTIsNDksNTIsNTYsNTAsNDYsNDksNDYsNTMsNDgsMTksNiwxMSw0Myw2LDEsNCwxLDEzMCwyMjksMjgsMiwxLDEsNCw0LDMsMiw1LDMyLDQ4LDEzLDYsOSw0MiwxMzQsNzIsMTM0LDI0NywxMywxLDEsMTEsNSwwLDMsMTMwLDEsMSwwLDE3MCwxOTIsMTMsODEsOSwxMjYsMjM2LDIxLDE2NCwxMzQsMTc5LDEyMSwxODgsMTk2LDEzMSw2NCwyNDgsMTAzLDIxMSwxNTEsNDYsMjA2LDEwNiwxMDMsMjUxLDE2NCwxMTIsMjI3LDk2LDE5OCw2OCw4OSwyNDAsMTczLDU2LDY2LDIxMSwyNTUsOCwzMCwxMTMsMjM0LDEzNyw4MywxNTEsMjcsMzUsMjQ5LDM3LDE5MiwxNzMsMCwxOTQsNzEsNDksMjQsODIsNiwyNDAsMTc5LDE2OSwyNSw0MSwyNTEsMTQ1LDE4MywxMDIsMTgxLDYzLDIyNSw1MSw4Miw0MiwxMzEsODgsMTg0LDIwOSwzMiwxODAsMTcxLDI1MSwxMjcsMjMyLDIzOSwzNiwxMjMsMTAwLDI1NSwxOTgsMTY2LDMzLDc0LDE5MywyMTcsMTkwLDExNSw1NCwyNTMsMjI0LDI0MywxNjgsMjQsNjMsMTQ3LDc1LDgyLDI0LDExNywyNDUsMjI3LDI0NywxMzcsMTI4LDE3NSwxNTEsMTAsOTEsMzAsNCw0Miw1NiwxMTgsMjE1LDc1LDE2OCwxOTAsMjM5LDIzMyw0NSwyMTAsMjI3LDExNSwyMDQsMTAwLDY1LDIwMCwxNDgsMTczLDEyNCwyMTcsMTY0LDI0NCwxMjUsMTczLDYxLDE2NCwyNTQsMTc1LDcxLDE0NSwxNTIsNzEsODMsMjI3LDkwLDgsMTU2LDIyOCwyMDMsMjI3LDIxMSwyMDAsNTQsMjM0LDIwOCwxNjIsMTY3LDIwNiwxNjUsOTcsOTAsMjE1LDIyOCw3MiwxNiwxMzQsMTk1LDExOSwxNzksMTAyLDY4LDIxMCwyNTEsMTUzLDEwNywxODgsMjI2LDE1NSwzMywxNzMsMTg0LDE0OSwyNDcsMTQ3LDEzMCwyMzgsMTk3LDczLDYyLDc4LDE5Myw1MSwxOTQsMjIsMTI3LDcsMTEzLDI0NSwxNTMsNDksMTE1LDE4LDE1LDI0MiwxNDEsODMsMjMyLDEyOSwxNjgsMTUxLDY0LDE5Myw1MCwyMDcsNjAsNTIsMTA0LDQ0LDE4NywyMDcsNzgsOTMsMTg5LDE5MywyMjQsMTI4LDM0LDMxLDEzNSw4MiwxNTMsMTI5LDY1LDIyMSwyMCwxNTAsMjE1LDE1LDU4LDE3Niw2Myw0NCw5MSwxOTIsMTI3LDE3Mw==";
+    public static final String WEBAUTHN_TYPE = "webauthn.create";
+    public static final String CHALLENGE = "dGVzdGJ5dGVz";
+    public static final String ORIGIN_ADDRESS = "http://localhost:8080";
+    public static final String FIDO_U2F_FORMAT = "fido-u2f";
+    public static final String AUTH_DATA = "SZYN5YgOjGh0NBcPZHZgW4/krrmihjLHmVzzuoMdl2NBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQDASCKeOhmxxo216l4FQFS8ny7WXhVW1thf2nyu2LPYGeiR315vL17RVDuayC/z0FOASKqce7T97vMfAQDhRHG+lAQIDJiABIVggcwf1zKo3O3b6xuS+pGvs2/4YM0ttVnvdLDc6De0vxIQiWCDUrYqHYi+gFsSSgIvumJA5lFpxixGFrpgPsie6FZyKHw==";
+
+    private PublicKeyCredential publicKeyCredential;
+
+
+    @Before
+    public void setUp() throws Exception {
+        publicKeyCredential = new PublicKeyCredential();
+
+        AuthenticatorAttestationResponse authenticatorAttestationResponse = new AuthenticatorAttestationResponse();
+
+        Attestation attestation = new Attestation();
+        AttestationStatement attestationStatement = new AttestationStatement();
+        attestationStatement.setSignature(ATTESTATION_SIGNATURE);
+        attestationStatement.setCertificate(ATTESTATION_CERTIFICATE);
+        attestation.setAttestationStatement(attestationStatement);
+        attestation.setFormat(FIDO_U2F_FORMAT);
+        attestation.setAuthData(AUTH_DATA);
+
+        ClientData clientData = new ClientData();
+        clientData.setType(WEBAUTHN_TYPE);
+        clientData.setChallenge(CHALLENGE);
+        clientData.setOrigin(ORIGIN_ADDRESS);
+
+        authenticatorAttestationResponse.setAttestation(attestation);
+        authenticatorAttestationResponse.setClientData(clientData);
+
+        publicKeyCredential.setId(CREDENTIAL_ID);
+        publicKeyCredential.setType(PUBLIC_KEY_TYPE);
+        publicKeyCredential.setAuthenticatorAttestationResponse(authenticatorAttestationResponse);
+    }
+
+    @Test
+    public void testValidate() throws Exception {
+        CredentialService credentialService = new CredentialService();
+        credentialService.validateAndSave(publicKeyCredential, "georgejetson@spacely.com");
+    }
+}
