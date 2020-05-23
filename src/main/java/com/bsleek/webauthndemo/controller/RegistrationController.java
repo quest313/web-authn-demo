@@ -19,13 +19,13 @@ public class RegistrationController {
     private CredentialService credentialService;
 
 
-    @RequestMapping(value = "/registration/challenge", method = RequestMethod.POST)
+    @PostMapping(value = "/registration/challenge")
     public RegistrationResponse register(@RequestBody RegistrationChallengeRequest registrationChallengeRequest) {
         System.out.println(registrationChallengeRequest.getName());
         return new RegistrationResponse();
     }
 
-    @PostMapping(value = "/registration/credential") /// why do we need credential
+    @PostMapping(value = "/registration/credential")
     public void saveCredential(@RequestBody RegistrationRequest registrationRequest) throws Exception {
         System.out.println(registrationRequest);
         credentialService.validateAndSave(registrationRequest.getPublicKeyCredential(), registrationRequest.getName());

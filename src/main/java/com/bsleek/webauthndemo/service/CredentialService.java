@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CredentialService {
@@ -42,37 +43,23 @@ public class CredentialService {
                 publicKeyCredential.getAuthenticatorAttestationResponse();
         Attestation attestation = authenticatorAttestationResponse.getAttestation();
         String authData64 = attestation.getAuthData();
+
         byte[] authData = Base64.getDecoder().decode(authData64);
-
-        System.out.println("Total length of auth data: " + authData.length);
-
         byte[] credentialLengthBytes = Arrays.copyOfRange(authData, 53, 55);
 
         BigInteger bigInteger = new BigInteger(credentialLengthBytes);
-        System.out.println("Credential Id Length:" + bigInteger);
 
 
-        // guess its all zero
-        byte[] aaguid = Arrays.copyOfRange(authData, 35, 51);
-        System.out.println("guid: ");
-        for (byte b : aaguid) {
-            System.out.println(b);
 
-        }
 
         int credentialLength = bigInteger.intValue();
         byte[] credentialIdBytes = Arrays.copyOfRange(authData, 55, 55 + credentialLength);
 
 
         String credentialId = Base64.getEncoder().encodeToString(credentialIdBytes);
-        System.out.println("Credential Id (Base 64) " + credentialId);
 
 
-
-
-        // ? + 2 + 64 + 77
         byte[] publicKeyBytes = Arrays.copyOfRange(authData, 55 + credentialLength, authData.length);
-        System.out.println("public key bytes length: " + publicKeyBytes.length);
 
 
         CBORObject cborObject = CBORObject.Read(new ByteArrayInputStream(publicKeyBytes));
@@ -80,20 +67,9 @@ public class CredentialService {
 
 
         Map<String, CBORObject> keys = new HashMap<>();
-        cborObject.getKeys().stream().forEach(key ->
-        {
-            System.out.println("key found:" + key +
-                    " value: " + cborObject.get(key) + "type: " + cborObject.get(key).getType() +
-                    "key type:" + key.getType());
-
+        for (CBORObject key : cborObject.getKeys()) {
             keys.put(key.toString(), key);
-        });
-
-
-        System.out.println("finished message parse");
-
-        int numberThree = (int) authData[55];
-        System.out.println(numberThree);
+        }
 
 
         // get simple value returns int for CBOR Object
@@ -109,7 +85,7 @@ public class CredentialService {
         if (type != 2) {
             throw new InvalidKeyException("Invalid type");
         } else if (algorithm != -7) {
-            throw new InvalidKeyException("Invalid algoritm");
+            throw new InvalidKeyException("Invalid algorithm");
         } else if (curveType != 1) {
             throw new InvalidKeyException("Invalid curve type");
         }
@@ -143,6 +119,7 @@ public class CredentialService {
         // append this to random
 
 
+        // Covert JSON to bytes as per spec and hash
         ObjectMapper objectMapper = new ObjectMapper();
         String clientDataJson = objectMapper.writeValueAsString(loginRequest.getAuthenticatorAssertionResponse().getClientData());
         System.out.println("clientDataJson is " + clientDataJson);
@@ -155,26 +132,21 @@ public class CredentialService {
         String authenticatorData = loginRequest.getAuthenticatorAssertionResponse().getAuthenticatorData();
         byte[] authenticatorDataBytes = Base64.getDecoder().decode(authenticatorData);
 
-//        byte[] payload = authenticatorDataBytes + hashedClientDataJsonBytes;
+        // Concatenate auth data bytes with ClientDataJSON as per spec
 
         byte[] payload = new byte[authenticatorDataBytes.length + hashedClientDataJsonBytes.length];
         System.arraycopy(authenticatorDataBytes, 0, payload, 0, authenticatorDataBytes.length);
         System.arraycopy(hashedClientDataJsonBytes, 0, payload, authenticatorDataBytes.length, hashedClientDataJsonBytes.length);
 
-
-        Signature ecdsaSign = Signature.getInstance("SHA256withECDSA");
-
+        // perform signature
+        Signature ecdsaSign = Signature.getInstance("SHA256withECDSA"); // <- this would vary depending on algorithm
         ECPoint ecPoint = new ECPoint(new BigInteger(key.getX()), new BigInteger(key.getY()));
 
-        // Not varying curve type because we know it will be p256 for yubico
-
-        // from https://www.codota.com/code/java/classes/java.security.spec.ECGenParameterSpec
         AlgorithmParameters parameters = AlgorithmParameters.getInstance("EC", "SunEC");
-        parameters.init(new ECGenParameterSpec("secp256r1"));
+        parameters.init(new ECGenParameterSpec("secp256r1")); // <- this would vary depending on curve type
         ECParameterSpec ecParameters = parameters.getParameterSpec(ECParameterSpec.class);
         ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(ecPoint, ecParameters);
         PublicKey publicKey = KeyFactory.getInstance("EC", "SunEC").generatePublic(pubKeySpec);
-
 
         ecdsaSign.initVerify(publicKey);
         ecdsaSign.update(payload);

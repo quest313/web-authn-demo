@@ -1,7 +1,5 @@
 package com.bsleek.webauthndemo.model;
 
-import java.math.BigInteger;
-
 public class WebAuthnPublicKey {
 
     private String id;
