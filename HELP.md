@@ -1,19 +1,3 @@
-# Getting Started
-
-### Reference Documentation
-For further reference, please consider the following sections:
-
-* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
-* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/docs/2.1.8.RELEASE/maven-plugin/)
-* [Spring Web](https://docs.spring.io/spring-boot/docs/{bootVersion}/reference/htmlsingle/#boot-features-developing-web-applications)
-
-### Guides
-The following guides illustrate how to use some features concretely:
-
-* [Building a RESTful Web Service](https://spring.io/guides/gs/rest-service/)
-* [Serving Web Content with Spring MVC](https://spring.io/guides/gs/serving-web-content/)
-* [Building REST services with Spring](https://spring.io/guides/tutorials/bookmarks/)
-
 
 
 var request = JSON.parse('{"name":"benjaminsleek@gmail.com"}');
@@ -66,9 +50,9 @@ const decodedAttestationObj = CBOR.decode(
 
 // convert auth data to byte array
 
-window.btoa(decodedAttestationObj.authData)
-window.btoa(decodedAttestationObj.attStmt.sig)
-window.btoa(decodedAttestationObj.attStmt.x5c)
+base64ArrayBuffer(decodedAttestationObj.authData)
+
+
 
 // below is incorrect for a likely more accurate version to conver to base64 try this
 https://gist.github.com/jonleighton/958841
@@ -96,23 +80,35 @@ https://gist.github.com/jonleighton/958841
    }
 }
 
-/// Oh maybe some made my server side life easier! should i peek
-
-https://github.com/webauthn4j/webauthn4j
-
-Japanese guy... is this cheating?
-
-
-What are FIDO Conformance test tools
-
-Wine guys makes COSE tools...
-
-
-Yubico has an implementation
-https://mvnrepository.com/artifact/com.yubico/webauthn-server-core
 
 
 
-More to try
--- What happens in different browsers
+Now onto authentication...
 
+Convert base64 to array buffer
+
+const credentialId = _base64ToArrayBuffer('');
+
+
+const publicKeyCredentialRequestOptions = {
+    challenge: Uint8Array.from(
+        'randomString', c => c.charCodeAt(0)),
+    allowCredentials: [{
+        id: credentialId,
+        type: 'public-key',
+        transports: ['usb', 'ble', 'nfc'],
+    }],
+    timeout: 60000,
+}
+
+First step is to get the credential.
+
+const credential = await navigator.credentials.get({
+    publicKey: publicKeyCredentialRequestOptions
+});
+
+Now lets prepare the request to the server
+
+base64ArrayBuffer(credential.response.authenticatorData)
+
+base64ArrayBuffer(credential.response.signature)

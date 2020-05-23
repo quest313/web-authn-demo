@@ -4,14 +4,14 @@ import java.math.BigInteger;
 
 public class WebAuthnPublicKey {
 
-    private BigInteger id;
+    private String id;
     private byte[] x;
     private byte[] y;
     private int alg;
     private int keyType;
     private int curveType;
 
-    public WebAuthnPublicKey(BigInteger id, byte[] x, byte[] y, int alg, int keyType, int curveType) {
+    public WebAuthnPublicKey(String id, byte[] x, byte[] y, int alg, int keyType, int curveType) {
         this.id = id;
         this.x = x;
         this.y = y;
@@ -20,11 +20,11 @@ public class WebAuthnPublicKey {
         this.curveType = curveType;
     }
 
-    public BigInteger getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(BigInteger id) {
+    public void setId(String id) {
         this.id = id;
     }
 

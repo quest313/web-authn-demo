@@ -3,10 +3,9 @@ package com.bsleek.webauthndemo.service;
 
 import com.bsleek.webauthndemo.exception.InvalidKeyException;
 import com.bsleek.webauthndemo.dao.CredentialDAO;
-import com.bsleek.webauthndemo.model.Attestation;
-import com.bsleek.webauthndemo.model.AuthenticatorAttestationResponse;
-import com.bsleek.webauthndemo.model.PublicKeyCredential;
-import com.bsleek.webauthndemo.model.WebAuthnPublicKey;
+import com.bsleek.webauthndemo.model.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.upokecenter.cbor.CBORObject;
 import com.upokecenter.cbor.CBORType;
 import com.upokecenter.cbor.ICBORConverter;
@@ -18,6 +17,8 @@ import javax.security.auth.login.CredentialNotFoundException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.*;
+import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -43,12 +44,12 @@ public class CredentialService {
         String authData64 = attestation.getAuthData();
         byte[] authData = Base64.getDecoder().decode(authData64);
 
-        System.out.println("total length" + authData.length);
+        System.out.println("Total length of auth data: " + authData.length);
 
         byte[] credentialLengthBytes = Arrays.copyOfRange(authData, 53, 55);
 
         BigInteger bigInteger = new BigInteger(credentialLengthBytes);
-        System.out.println(bigInteger);
+        System.out.println("Credential Id Length:" + bigInteger);
 
 
         // guess its all zero
@@ -62,39 +63,17 @@ public class CredentialService {
         int credentialLength = bigInteger.intValue();
         byte[] credentialIdBytes = Arrays.copyOfRange(authData, 55, 55 + credentialLength);
 
-        BigInteger credentialId = new BigInteger(credentialIdBytes);
-        System.out.println("credential id: " + credentialId);
+
+        String credentialId = Base64.getEncoder().encodeToString(credentialIdBytes);
+        System.out.println("Credential Id (Base 64) " + credentialId);
+
+
 
 
         // ? + 2 + 64 + 77
         byte[] publicKeyBytes = Arrays.copyOfRange(authData, 55 + credentialLength, authData.length);
         System.out.println("public key bytes length: " + publicKeyBytes.length);
 
-
-//        CBORFactory f = new CBORFactory();
-//        ObjectMapper objectMapper = new ObjectMapper(f);
-//
-//        Map<Object, Object> publicKeyMap = objectMapper.readValue(publicKeyBytes, Map.class);
-//
-//
-//
-//        System.out.println("Total keys" + publicKeyMap.keySet().size());
-//        publicKeyMap.keySet().stream().forEach(key -> System.out.println(key));
-//        System.out.println("done print keys");
-//        publicKeyMap.keySet().stream().forEach(key -> System.out.println(publicKeyMap.get(key)));
-//        System.out.println("done print value");
-//
-//        byte [] nextBytes = (byte[]) publicKeyMap.get("1");
-//
-//        Map<Object, Object> nextMap = objectMapper.readValue(nextBytes, Map.class);
-//
-//        System.out.println("Total next keys" + publicKeyMap.keySet().size());
-
-//        try {
-//            Message message = Message.DecodeFromBytes(publicKeyBytes);
-//        } catch (CoseException e) {
-//            e.printStackTrace();
-//        }
 
         CBORObject cborObject = CBORObject.Read(new ByteArrayInputStream(publicKeyBytes));
         System.out.println("type is " + cborObject.getType());
@@ -140,7 +119,65 @@ public class CredentialService {
         }
 
         WebAuthnPublicKey webAuthnPublicKey = new WebAuthnPublicKey(credentialId, x, y, algorithm, type, curveType);
-        credentialDAO.save(userName, publicKeyCredential.getId(), webAuthnPublicKey);
+        credentialDAO.save(userName, webAuthnPublicKey);
 
+    }
+
+
+    public boolean validateSignature(LoginRequest loginRequest) throws
+            NoSuchAlgorithmException, NoSuchProviderException, InvalidParameterSpecException,
+            InvalidKeySpecException, java.security.InvalidKeyException, SignatureException, CredentialNotFoundException, JsonProcessingException {
+
+
+        WebAuthnPublicKey key =
+                CredentialDAO.load(loginRequest.getAuthenticatorAssertionResponse().getUserHandle());
+
+        byte[] signature = Base64.getDecoder()
+                .decode(loginRequest.getAuthenticatorAssertionResponse().getSignature());
+
+
+
+        // base64 encode clientdatajson
+        // call get bytes
+        // sha256 it
+        // append this to random
+
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String clientDataJson = objectMapper.writeValueAsString(loginRequest.getAuthenticatorAssertionResponse().getClientData());
+        System.out.println("clientDataJson is " + clientDataJson);
+        String base64ClientDataJson = Base64.getEncoder().encodeToString(clientDataJson.getBytes());
+        byte[] clientDataJsonBytes = Base64.getDecoder().decode(base64ClientDataJson);
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hashedClientDataJsonBytes = digest.digest(clientDataJsonBytes);
+
+        String authenticatorData = loginRequest.getAuthenticatorAssertionResponse().getAuthenticatorData();
+        byte[] authenticatorDataBytes = Base64.getDecoder().decode(authenticatorData);
+
+//        byte[] payload = authenticatorDataBytes + hashedClientDataJsonBytes;
+
+        byte[] payload = new byte[authenticatorDataBytes.length + hashedClientDataJsonBytes.length];
+        System.arraycopy(authenticatorDataBytes, 0, payload, 0, authenticatorDataBytes.length);
+        System.arraycopy(hashedClientDataJsonBytes, 0, payload, authenticatorDataBytes.length, hashedClientDataJsonBytes.length);
+
+
+        Signature ecdsaSign = Signature.getInstance("SHA256withECDSA");
+
+        ECPoint ecPoint = new ECPoint(new BigInteger(key.getX()), new BigInteger(key.getY()));
+
+        // Not varying curve type because we know it will be p256 for yubico
+
+        // from https://www.codota.com/code/java/classes/java.security.spec.ECGenParameterSpec
+        AlgorithmParameters parameters = AlgorithmParameters.getInstance("EC", "SunEC");
+        parameters.init(new ECGenParameterSpec("secp256r1"));
+        ECParameterSpec ecParameters = parameters.getParameterSpec(ECParameterSpec.class);
+        ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(ecPoint, ecParameters);
+        PublicKey publicKey = KeyFactory.getInstance("EC", "SunEC").generatePublic(pubKeySpec);
+
+
+        ecdsaSign.initVerify(publicKey);
+        ecdsaSign.update(payload);
+        return ecdsaSign.verify(signature);
     }
 }

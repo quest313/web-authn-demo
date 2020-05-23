@@ -1,5 +1,8 @@
 package com.bsleek.webauthndemo.model;
 
+/**
+ *  Used for navigator.credentials.create
+ */
 public class PublicKeyCredential {
 
     private String id;

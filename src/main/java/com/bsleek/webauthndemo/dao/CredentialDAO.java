@@ -21,9 +21,9 @@ public class CredentialDAO {
     static Map<String, WebAuthnPublicKey> keyMap = new HashMap<String, WebAuthnPublicKey>();
 
 
-    public static void save(String username, String credentialId, WebAuthnPublicKey webAuthnPublicKey){
-        userToCredMap.put(username, credentialId);
-        keyMap.put(credentialId, webAuthnPublicKey);
+    public static void save(String username, WebAuthnPublicKey webAuthnPublicKey){
+        userToCredMap.put(username, webAuthnPublicKey.getId());
+        keyMap.put(webAuthnPublicKey.getId(), webAuthnPublicKey);
 
     }
 
@@ -32,6 +32,8 @@ public class CredentialDAO {
         return userToCredMap.get(user);
     }
 
+
+    // This currently supports only a single credential per user!!!
     public static WebAuthnPublicKey load(String username) throws CredentialNotFoundException{
         if(!userToCredMap.containsKey(username)){
             throw new CredentialNotFoundException("Credential not found for:" + username);
