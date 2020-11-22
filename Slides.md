@@ -1,4 +1,6 @@
 
+-- Pictures
+
 
 
 
@@ -7,6 +9,9 @@
 1. History of passwords and challenges
 
     show complexity to implement a login page (OWASP)
+    phishing
+    breaches
+    
 
 2. Introducing Web Authentication (single diagram)
 
@@ -14,10 +19,16 @@
     
 3. Browser support
 
+4. OS support
+
+    Mac added support in IOS 13.3
+
 
 4. List devices supported
     
 3. Didn't arrive overnight built on Credentials API, COSE, CBOR
+
+    https://xkcd.com/2347/
 
 3. We know the why.. what about who and when
 
@@ -38,6 +49,11 @@
 
 
 Code walkthrough
+
+Headaches
+
+    - Recommended to have two
+    - Recommended to name them
 
 Security risks
 

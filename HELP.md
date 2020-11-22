@@ -52,6 +52,7 @@ const decodedAttestationObj = CBOR.decode(
 
 base64ArrayBuffer(decodedAttestationObj.authData)
 
+base64ArrayBuffer(decodedAttestationObj.attStmt.sig)
 
 
 // below is incorrect for a likely more accurate version to conver to base64 try this
