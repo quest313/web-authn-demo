@@ -2,9 +2,11 @@ package com.bsleek.webauthndemo.model;
 
 public class ClientData {
 
+    private String type;
     private String challenge;
     private String origin;
-    private String type;
+    private boolean crossOrigin;
+
 
     public String getChallenge() {
         return challenge;
@@ -30,12 +32,21 @@ public class ClientData {
         this.type = type;
     }
 
+    public boolean isCrossOrigin() {
+        return crossOrigin;
+    }
+
+    public void setCrossOrigin(boolean crossOrigin) {
+        this.crossOrigin = crossOrigin;
+    }
+
     @Override
     public String toString() {
         return "ClientData{" +
                 "challenge='" + challenge + '\'' +
                 ", origin='" + origin + '\'' +
                 ", type='" + type + '\'' +
+                ", crossOrigin=" + crossOrigin +
                 '}';
     }
 }

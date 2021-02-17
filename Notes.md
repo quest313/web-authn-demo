@@ -36,6 +36,11 @@ window.btoa(decodedAttestationObj.attStmt.x5c)
 
 
 
+// Be careful of the order of elements in clientDataJson as this could fail signature
+
+
+
+
 
 ---- 
 
