@@ -45,7 +45,11 @@
 10. Own implementation
    - How deep to go
    
+11. Paragon?
 
+12. Sites using today
+
+13 Decentralized ID
 
 
 Code walkthrough

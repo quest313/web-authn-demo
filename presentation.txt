@@ -1,0 +1,120 @@
+
+
+
+[ Part about Login screen and vulnerabilities]
+
+
+
+While passwords have been existence ever since ANCIENT times, COMPUTERS became popular and their popularity took off. The average person has around 100 passwords. Now we are told not to reuse passwords, but your average person is not likely to use a password manager. So they are choosing a less secure method such as writing down passwords, choose deviations of the same password or even using the same password on multiple sites. Also they basically they rely on a single factor. So unless you rely on multifactor which I hope you would be for important sites you are only proving who you are by what you know. Something you know, Something you have, Something you are.
+
+So we're OWASP, we care about web security. Ok let me redesign my website to take advantage of a token based based device to prove something I have or maybe I can add facial recognition to my site. So I go to my development team... Ok guess we have a new website.. I want the following..
+
+Authentication that supports facial recognition, token authentication and passwords for people that have neither. How long is it going to take days, weeks, months? Oh and by the way it has to support multiple devices and be 100% secure?
+
+So you see the problem right?
+
+So Enter.. Web Authentication RFC
+
+What Web Authentication does is allows us to separate the HOW of authentication from the Web and give us a common interface to work with an "Authenticator". This allows developers to just implement the Web Authentication piece and not worry about anything else.
+
+Sounds a lot simpler right?
+
+Ok so we now have this "Authenticator" that tells us who someone is, but how does our site verify the identity that is sent to it? Is this a new problem, well of course not. Enter our frield "Public Key cryptography" .
+
+Similar to how I might SSH to a web server, Web Authentication relies on the storage of a public key on a web site and private key on the authenticator. So if I'm storing public keys on my website and I get breached.. What does that mean? Not a whole lot, they are public they are not secrets.
+
+
+Ok lets cover some basic terminology...
+
+
+
+Relying party (this my web site)
+
+User agent ( this is your browser and generally the mediator)
+
+Authenticator ( this is doing the identify verfication )
+
+
+
+How can we take advantage of some better methods of authentication? What if we could separate the "How" we prove identity from the website and externalize that. Then we can incorporate the " something you know or something you have " without having to build native support into our application.
+
+Ok so we have our Relying Party, we have our User Agent and we have our Authenticator. How do they interact to form a login.  Well the whole ceremony of web authentication is split into two phases, the registration and the authentication. So firt before we login we must tell the website (the relying party who we are). So for example...
+
+Bob comes up to the website and say "Hi there website, my name is bob." To which the website replies "Ok so Bob, show me something that I'll recognize later."
+
+Bob sends his public key and proof that he owns the public key (we'll calll that the attestation). Then the website says to Bob.. "It was nice meeting I'll see you later"
+
+So sometime passes and Bob visits his old website and says hey remember me its Bob! And the website says, ok I'd like to believe you, but I want you to prove it. So he sends bob a challenge or a nonce. This could be anything random and bob says hold on I got my private key right here in my authenticator that knows how to sign this challenge. So he gets his trusty authenticator signs the challenge and sends his challenge back to the website. The website grabs his magnififying glass and looks at the signature and the public key on store for Bob and goes back and forth between the two and eventually says "Welcome back Bob! Enjoy the site"
+
+
+So we already mentioned one risk of conventional password based login - stolen credentials in a breach and how Web Authentication doesn't store any secrets. Let's look another scenario where someone may look to eavesdrop on the conversation. For instance Eve is sitting waiting to intercept the signature from Bob after being persistent enough she waits ans waits and Bob comes up to sign to login to the website and she grabs the signature and thinks I got it. All I have to do it send this signature back to the web server. So she goes to the website, and says "Hi there website" in this manly voice this is Bob. And the website scratches his head and says ok Bob, prove it and he sends her a random nonce and she immediately replies with the signature. So the website goes the filing cabinet and gets Bob's public key and looks at the signature and finally says "Sorry, but I can't verify you are Bob." Eve gets upset... she takes Bobs signature and tears it in half throws it ong the ground and starts stomping on it. So why is this this the case [audience quesition?]
+
+So what are some type of Authenticators Bob might have...
+
+[slide of pictures]
+
+Yubikey, Smart Card, Finger print.
+
+Support Browsers
+
+[show slide from can i use yubico]
+
+
+So we talked about how really the base of Web Authentication is public key cryptography, but there's a few other standards that came about that before Web Authetnticatoin.
+
+[xkcd slide]
+
+One is the Credentials API, allows a web site to store user name and passwords. Two other technologies are CBOR and CTAP. CBOR you can think of a binary version of json and CTAP (Client to Authetnicator Protocol) is the protocol that web browsers use to communicate with your authenticator. So as long as your authenticator can speak CTAP, you can use it for Web Authentication.
+
+So we talked at a high level of how web authentication works lets talk about the Who.
+
+So Web Authentication is a W3C standard as of 2019. It was developed and recommended by FIDO alliance the same people that brought you U2F or universal 2 factor you'll see on many websites today. 
+
+[slide of companies ]
+
+One thing to note is the distiction between between U2F and Web Authenticatino is that U2F was designed to be always be a second factor (meaning two forms of authentication). Web Authentication is by itself a single factor. That doesn't mean that it can't be part of a two factor login. Confusing enough?
+
+
+ So typical U2F exchange would I enter my username and password then and have to enter either enter a token on an external device or insert a FIDO device or anything that suports U2F.
+
+ Web authentication I would enter my username and automatically be prompted to authenticate with my authenticator.It could be a single factor.
+
+Ok enough with the high level, let's open the hood and see how this works. I mentioned before about the two phases of web authentiation registration and subsequent authentication. So lets look at Registration first...
+
+First the user would send the registration request to the server and get a challenge.
+
+Then the user agent would construct a public key and call navigator.credentials.create with a public key
+
+[slide of create with public key]
+
+It would get a response
+
+[slide of response]
+
+It would be sent to the server where the server would validate the signature and store the public key.
+
+For authentication we would then call navigator.credentials.get to ask for a signature.
+
+[slide of get with request options]
+
+it would get a response
+
+[slide of response]
+
+Then the server just gets the public key and validates the signature right? Well its a little more complicated then that. Verification of the signature is actually a 12? step process on the server. It's pretty dry stuff so I want go into that but its detailed in the standard documentation.
+
+
+"Write about how I looked at different libraries and the people"
+
+Jim schaad Image
+https://www.oregonwinepress.com/jim-schaad-1959-ndash-2020
+
+
+Yoshikazu
+https://avatars.githubusercontent.com/u/2139672?s=400&u=80fedb3892ee2e45b6bf90068c367a684bffd348&v=4
+
+
+Peter Occil
+https://www.linkedin.com/in/peter-occil-6b63144b/
+
+
